@@ -1,0 +1,3 @@
+getUsersData_server是為了之前圖片要在本機所以多寫的
+但目前已經把圖片都放在本機了，所以已經用不到
+以後更新使用getUserData copy就好了。
