@@ -1,0 +1,285 @@
+{% extends "layouts/layout2.html" %}
+{% block title %}<title>首頁</title>{% endblock %}
+{% block content %}
+
+
+<div class="container text-center" id="search">
+
+
+    <div class="section-title center">
+        <h2>關鍵字查詢 </h2>
+        <hr>
+    </div>
+    <div class="section-title center text-center " style="padding-bottom: 0px;padding-top: 0px;">
+        <h3><b>STEP1:</b> 輸入關鍵字</h3>
+        <br>
+        <hr>
+    </div>
+    <div class="row justify-content-md-center">
+        <div class="col-md-auto">
+            <h3>輸入你想找的instagram類型，例如:可愛的小狗。</h3>
+            <input id="searchInput" style="font-size:18px; text-align:center;" class="form-control input-lg">
+            <br>
+            <button type="button" onclick="searchIns()" class="btn btn-dark" id="btn-search-submit">查詢</button>
+        </div>
+    </div>
+
+</div>
+<div class="container">
+    <section id="searchResult" style="padding-top: 0px; display:none; margin-bottom: 30px">
+
+        <br>
+        <div class="section-title">
+            <br>
+            <div class="section-title center text-center " style="padding-bottom: 0px; padding-top: 0px;">
+                <h3><b>STEP2:</b> 選取分類及比例</h3>
+                <br>
+                <hr>
+            </div>
+            <div class="section-title center text-center " style="padding-bottom: 10px; padding-top: 0px;">
+                <h3 id="similarTypes"></h3>
+            </div>
+            <div class="row justify-content-md-center text-center">
+
+            </div>
+            <div class="row justify-content-md-center text-center">
+
+                <div class="col-md-3">
+                    <h3>貼文數量：</h3>
+                    <select class="form-control" id="postNum" onchange="getData()"
+                        style="margin-bottom: 5px; text-align-last:center; font-size:16px;">
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option selected="selected" value="150">150(預設)</option>
+                        <option value="200">200</option>
+                        <option value="250">250</option>
+                        <option value="300">300</option>
+
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <h3>圖片比影片的比重:</h3>
+                    <select class="form-control f18" id="rate" onchange="getData()"
+                        style="margin-bottom: 5px; text-align-last:center; font-size:16px;  ">
+                        <option value="9:1">9:1</option>
+                        <option selected="selected" value="8:2">8:2(預設)</option>
+                        <option value="7:3">7:3</option>
+                        <option value="6:4">6:4</option>
+                    </select>
+                </div>
+
+
+            </div>
+
+            <div class="row justify-content-md-center">
+                <div class="col-md-8 col-md-offset-2">
+                    <h3 style="margin-top:30px; margin-bottom: 10px;">目前分類：<b class="finalType"></b>
+                    </h3>
+                </div>
+            </div>
+            <div class="row justify-content-md-center" style="overflow: auto;">
+                <table class="table-hover table table-bordered table-hover table-striped"
+                    style="width: 90%; margin: 0 auto !important;" data-link="row">
+                    <thead>
+                        <tr>
+                            <th scope="col">排名</th>
+                            <th scope="col">帳號ID</th>
+                            <th scope="col">追蹤人數</th>
+                            <th scope="col">平均按讚數</th>
+                            <th scope="col">平均留言數</th>
+                            <th scope="col">粉絲互動率</th>
+                            <th scope="col">貼文圖片平均分數(<b class="finalType"></b>)</th>
+                            <th scope="col">貼文影片平均分數(<b class="finalType"></b>)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultTable">
+                        <tr>
+                            <th scope="row">1</th>
+                            <td>Mark</td>
+                            <td>Otto</td>
+                            <td>@mdo</td>
+                            <td>Mark</td>
+                            <td>Otto</td>
+                            <td>@mdo</td>
+                            <td>Mark</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </section>
+</div>
+
+
+
+<div class="modal fade sm" id="loading" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle"><b>搜尋中</b></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="sysets" class="modal-body">
+                <div class="d-flex justify-content-center">
+                    <div class="spinner-border" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitRecommendType()">確定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+
+    type = '';
+    $(document).ready(function () {
+
+        // $('#searchResult').hide();
+
+    });
+
+    function searchIns() {
+
+        var data = { "search": document.getElementById("searchInput").value }
+        if (data['search'] == '') {
+            swal("提示", "尚未輸入內容", "warning");
+        } else {
+            $("#loading").modal("show")
+            $("#loading").on("shown.bs.modal", function() {
+                console.log(data);
+                getUrl = ("http://" + location.host + "/instagram/search");
+                console.log(getUrl)
+                submitSearch(getUrl, data).then((response) => {
+                    if (response['success']) {
+                        $('#similarTypes').empty();
+                        $('#similarTypes').append(`搜尋後相關分類：`);
+
+                        similarTypes = response['similarTypes'];
+                        for (var i = 0; i < similarTypes.length; i++) {
+                            if (i == 0) {
+                                $('#similarTypes').append(`<a href="javascript:void(0);" class="types" onclick="changeType('${similarTypes[i]}')">${similarTypes[i]}</a>`)
+                            } else {
+                                $('#similarTypes').append(`、<a href="javascript:void(0);" class="types" onclick="changeType('${similarTypes[i]}')">${similarTypes[i]}</a>`)
+                            }
+                        }
+                        changeType(similarTypes[0]); //預設為第一個分類
+                    } else {
+                        console.log(response);
+                        Swal.fire({
+                            type: 'warning',
+                            title: 'Oops...',
+                            text: response['message'],
+                        })
+                    }
+                    $("#loading").modal("hide")
+                })
+            })
+        }
+    }
+
+    function submitSearch(getUrl, data) {
+        return new Promise((resolve) => {
+            $.ajax({
+                type: "GET",
+                url: getUrl,
+                data: data,
+                dateType: "json",
+                async: false,
+                success: function (response) {
+                    resolve(response);
+                },
+                error: function (response) {
+                    console.log(data);
+                    console.log(response);
+                    swal("提示", "unknow error", "warning");
+                },
+            })
+        })
+    }
+
+    function changeType(type) {
+        this.type = type;
+        var FTArray = document.getElementsByClassName("finalType");
+        for (var i = 0; i < FTArray.length; i++) {
+            console.log(type);
+            FTArray[i].innerHTML = type;
+        }
+        getData();
+    }
+
+    function getData() {
+        console.log(this.type)
+        postNum = document.getElementById("postNum").value;
+        rate = document.getElementById("rate").value;
+        imageRate = rate.split(":")[0];
+        videoRate = rate.split(":")[1];
+        getUrl = ("/instagram/getData/" + this.type + "/" + postNum + "/" + imageRate + "/" + videoRate);
+        console.log(getUrl)
+        $.ajax({
+            type: "GET",
+            url: getUrl,
+            dateType: "json",
+            async: false,
+            success: function (response) {
+
+                if (response['success']) {
+                    console.log(response);
+                    $('#resultTable').empty()
+                    score = response['score']
+
+                    order = 1
+                    score.forEach(user => {
+                        if (user['image']['score'][type] > 0.7) {
+                            if (!user['video']['score'][type]) {
+                                user['video']['score'][type] = '沒有影片';
+                            }
+                            $('#resultTable').append(`
+                                <tr>
+                                    <th scope="row">${order}</th>
+                                    <td onClick="window.open('https://www.instagram.com/${user['name']}/')" style="color:#007bff; cursor: pointer;"> 
+                                        <a>${user['name']}</a>
+                                    </td>
+                                    <td>${user['follower']}</td>
+                                    <td>${user['like']}</td>
+                                    <td>${user['comment']}</td>
+                                    <td>${user['ERate']}</td>
+                                    <td>${user['image']['score'][type]}</td>
+                                    <td>${user['video']['score'][type]}</td>
+                                </tr>
+                            `)
+                            order = order + 1
+                        }
+                    });
+                    $('#searchResult').show()
+
+                } else {
+                    console.log(response);
+                    Swal.fire({
+                        type: 'warning',
+                        title: 'Oops...',
+                        text: response['message'],
+                    })
+                }
+
+            },
+            error: function (response) {
+                console.log(response);
+                swal("提示", "unknow error", "warning");
+            },
+
+        })
+    }
+</script>
+
+{% endblock %}

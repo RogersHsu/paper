@@ -1,0 +1,155 @@
+{% extends "layouts/layout2.html" %}
+{% block title %}<title>目前分類</title>{% endblock %}
+{% block content %}
+
+<div class="container text-center" style="padding:80px 0px">
+
+    <section id="searchResult" style="padding-top: 0px; margin-bottom: 30px">
+
+        <div class="row justify-content-md-center my-5">
+            <div class="col-md-4">
+                <header class="section-header">
+                    <h2><b>分類查詢</b></h2>
+                </header>
+
+            </div>
+        </div>
+        <div class="row justify-content-md-center my-3">
+            <div class="col-md-4">
+
+                <h2><b>選取分類及比例</b></h2>
+
+
+            </div>
+        </div>
+        <div class="row justify-content-md-center my-3">
+            <div class="col-md-8">
+                <h3 id="similarTypes">
+                    選取分類：
+                    {% for type in types %}
+                    <a href="javascript:void(0);" class="types" onclick="changeType('{{type}}')">{{type}}</a>、
+                    {% endfor %}
+
+                </h3>
+            </div>
+        </div>
+
+        <div id="options" class="row justify-content-md-center  my-2" style="display:none">
+
+            <div class="col-md-3">
+                <h3>貼文數量：</h3>
+                <select class="form-control" id="postNum" onchange="getData()"
+                    style="margin-bottom: 5px; text-align-last:center; font-size:16px;">
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option selected="selected" value="150">150(預設)</option>
+                    <option value="200">200</option>
+                    <option value="250">250</option>
+                    <option value="300">300</option>
+
+                </select>
+            </div>
+            
+        </div>
+
+        <div id="result" style="display:none">
+            {% include "layouts/table.html" %}
+        </div>
+
+
+    </section>
+</div>
+
+
+
+<script>
+
+    type = '';
+    $(document).ready(function () {
+
+    });
+
+    function changeType(type) {
+        this.type = type;
+        var FTArray = document.getElementsByClassName("finalType");
+        for (var i = 0; i < FTArray.length; i++) {
+            console.log(type);
+            FTArray[i].innerHTML = type;
+        }
+        getData();
+    }
+
+    function getData() {
+        console.log(this.type)
+        postNum = document.getElementById("postNum").value;
+
+        getUrl = ("/instagram/getData/" + this.type + "/" + postNum);
+        console.log(getUrl)
+        $.ajax({
+            type: "GET",
+            url: getUrl,
+            dateType: "json",
+            async: false,
+            success: function (response) {
+
+                if (response['success']) {
+                    console.log(response);
+                    $('#resultTable').empty()
+                    score = response['score']
+
+                    order = 1
+                    score.forEach(user => {
+                        
+                        if (user['video']['amount']==0) {
+                        user['video']['score'][type] = '沒有影片';
+                        }
+                        $('#resultTable').append(`
+                            <tr>
+                                <th scope="row">${order}</th>
+                                <td onClick="window.open('https://www.instagram.com/${user['name']}/')" style="color:#007bff; cursor: pointer;"> 
+                                    <a>${user['name']}</a>
+                                </td>
+                                <td>${user['image']['score'][type]} (${user['image']['amount']})</td>
+                                <td>${user['video']['score'][type]} (${user['video']['amount']})</td>
+                                <td>${user['follower']}</td>
+                                <td>${user['like']}</td>
+                                <td>${user['comment']}</td>
+                                <td>${user['ERate']}</td>
+                                
+                            </tr>
+                        `)
+                        order = order + 1
+                        
+                    });
+                    $('#dataTable').DataTable({
+                        searching: false,
+                        paging: false,
+                        data: false,
+                        serverSide: false,
+                        retrieve: true,
+                        "bInfo": false
+                    });
+                    $('#result').show()
+                    $('#options').show()
+                    
+
+                } else {
+                    console.log(response);
+                    Swal.fire({
+                        type: 'warning',
+                        title: 'Oops...',
+                        text: response['message'],
+                    })
+                }
+
+            },
+            error: function (response) {
+                console.log(response);
+                swal("提示", "unknow error", "warning");
+            },
+
+        })
+    }
+</script>
+
+{% endblock %}

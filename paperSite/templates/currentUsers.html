@@ -1,0 +1,176 @@
+{% extends "layouts/layout2.html" %}
+{% block title %}<title>目前帳號</title>{% endblock %}
+{% block content %}
+
+<div class="container text-center" style="padding:80px 0px;">
+
+    <section id="searchResult">
+
+        <div class="row justify-content-md-center my-3">
+
+            <div class="col-md-4">
+                <header class="section-header">
+                    <h2><b>帳號查詢</b></h2>
+                </header>
+            </div>
+        </div>
+
+        <div class="row justify-content-md-center  my-5">
+
+            <div class="col-md-3">
+                <h3>選擇貼文數量：</h3>
+                <select class="form-control" id="postNum" onchange="getData()"
+                    style="margin-bottom: 5px; text-align-last:center; font-size:16px;">
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option selected="selected" value="150">150(預設)</option>
+                    <option value="200">200</option>
+                    <option value="250">250</option>
+                    <option value="300">300</option>
+                </select>
+            </div>
+
+        </div>
+
+        <div class="row justify-content-md-center" style="overflow: auto;">
+            <div class="col-md-12">
+                <table id="dataTable" class="table-hover table table-bordered table-hover table-striped" style="width: 80%;"
+                data-link="row">
+                <thead>
+                    <tr>
+                        <th scope="col">帳號ID</th>
+                        <th scope="col">貼文圖片平均分數(animal)</th>
+                        <th scope="col">貼文影片平均分數(animal)</th>
+                        <th scope="col">貼文圖片平均分數(vehicle)</th>
+                        <th scope="col">貼文影片平均分數(vehicle)</th>
+                        <th scope="col">貼文圖片平均分數(food)</th>
+                        <th scope="col">貼文影片平均分數(food)</th>
+                        <th scope="col">貼文圖片平均分數(fashion)</th>
+                        <th scope="col">貼文影片平均分數(fashion)</th>
+                        <th scope="col">追蹤人數</th>
+                        <th scope="col">平均按讚數</th>
+                        <th scope="col">平均留言數</th>
+                        <th scope="col">粉絲互動率</th>
+                    </tr>
+                </thead>
+                <tbody id="resultTable">
+                    {% for user in users %}
+                    <tr>
+                        <td onClick="window.open('https://www.instagram.com/{{user.name}}/')"
+                            style="color:#007bff; cursor: pointer;">
+                            <a>{{user.name}}</a>
+                        </td>
+                        <td>{{user.image.score.animal}}({{user.image.amount}})</td>
+                        <td>{{user.video.score.animal}}({{user.video.amount}})</td>
+                        <td>{{user.image.score.vehicle}}({{user.image.amount}})</td>
+                        <td>{{user.video.score.vehicle}}({{user.video.amount}})</td>
+                        <td>{{user.image.score.food}}({{user.image.amount}})</td>
+                        <td>{{user.video.score.food}}({{user.video.amount}})</td>
+                        <td>{{user.image.score.fashion}}({{user.image.amount}})</td>
+                        <td>{{user.video.score.fashion}}({{user.video.amount}})</td>
+                        <td>{{user.follower}}</td>
+                        <td>{{user.like}}</td>
+                        <td>{{user.comment}}</td>
+                        <td>{{user.ERate}}</td>
+                        
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            
+        </div>
+        <div class="row justify-content-md-center my-2">
+            <div class="col-md-4">
+                <h5><b>上次資料更新時間：2020年3月12日 23:59:59</b></h5>
+            </div>
+        </div>
+
+    </section>
+</div>
+
+<script>
+
+    $(document).ready(function () {
+        $('#dataTable').DataTable({
+            searching: false,
+            paging: false,
+            data: false,
+            serverSide: false,
+            retrieve: true,
+            "bInfo": false
+        });
+    });
+
+    function getData() {
+        console.log(this.type)
+        postNum = document.getElementById("postNum").value;
+
+        getUrl = ("/instagram/getUsers/" + postNum);
+        console.log(getUrl)
+        $.ajax({
+            type: "GET",
+            url: getUrl,
+            dateType: "json",
+            async: false,
+            success: function (response) {
+
+                if (response['success']) {
+                    console.log(response);
+                    $('#resultTable').empty()
+                    score = response['score']
+
+                    score.forEach(user => {
+
+                        $('#resultTable').append(`
+                            <tr>
+                                <td onClick="window.open('https://www.instagram.com/${user['name']}/')" style="color:#007bff; cursor: pointer;"> 
+                                    <a>${user['name']}</a>
+                                </td>
+                                
+                                <td>${user['image']['score']['animal']}(${user['image']['amount']})</td>
+                                <td>${user['video']['score']['animal']}(${user['video']['amount']})</td>
+                                <td>${user['image']['score']['vehicle']}(${user['image']['amount']})</td>
+                                <td>${user['video']['score']['vehicle']}(${user['video']['amount']})</td>
+                                <td>${user['image']['score']['food']}(${user['image']['amount']})</td>
+                                <td>${user['video']['score']['food']}(${user['video']['amount']})</td>
+                                <td>${user['image']['score']['fashion']}(${user['image']['amount']})</td>
+                                <td>${user['video']['score']['fashion']}(${user['video']['amount']})</td>
+                                <td>${user['follower']}</td>
+                                <td>${user['like']}</td>
+                                <td>${user['comment']}</td>
+                                <td>${user['ERate']}</td>
+                                
+                            </tr>
+                        `)
+                    });
+                    $('#dataTable').DataTable({
+                        searching: false,
+                        paging: false,
+                        data: false,
+                        serverSide: false,
+                        retrieve: true,
+                        "bInfo": false
+                    });
+
+
+                } else {
+                    console.log(response);
+                    Swal.fire({
+                        type: 'warning',
+                        title: 'Oops...',
+                        text: response['message'],
+                    })
+                }
+
+            },
+            error: function (response) {
+                console.log(response);
+                swal("提示", "unknow error", "warning");
+            },
+
+        })
+    }
+</script>
+
+{% endblock %}

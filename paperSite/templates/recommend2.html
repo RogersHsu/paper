@@ -1,0 +1,365 @@
+{% extends "layouts/layout2.html" %}
+{% block title %}<title>我要推薦</title>{% endblock %}
+{% block content %}
+
+<section style="margin: 100px 0px 0px 0px;">
+    <header class="section-header text-center">
+        <h2>推薦系統</h2>
+    </header>
+</section>
+
+<section style="margin-top: 60px; padding:80px 0px;" class="section-bg">
+    <header class="section-header">
+        <h3>推薦帳號</h3>
+    </header>
+
+    <div class="container news-contents　text-center">
+        <div class="row justify-content-md-center">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input id="account" type="text" class="form-control" placeholder="輸入你想推薦的instagram帳號，系統將會分析此帳號。"
+                        aria-label="Recipient's username" aria-describedby="basic-addon2">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" onclick="recommendNewUser()">推薦</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section style="margin-bottom: 60px; padding:80px 0px;">
+    <header class="section-header">
+        <h3>推薦分類</h3>
+    </header>
+
+    <div class="container news-contents　text-center">
+        <div class="row justify-content-md-center">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input id="type" type="text" class="form-control" placeholder="輸入你想推薦的分類，系統將會分析每個帳號在此新分類分數。"
+                        aria-label="Recipient's username" aria-describedby="basic-addon2">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" onclick="submitRecommendType2()">推薦</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="modal fade sm" id="loading" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-center">
+                    <h5 class="modal-title" id="exampleModalLongTitle"><b>推薦中</b></h5>
+                    <div class="spinner-border" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade " id="selectSynsets" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle"><b>請選擇你想推薦分類的定義</b></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="sysets" class="modal-body">
+                <div class="row">
+                    <div class="col-auto">
+                        <div class="form-check">
+                            <input class="form-check-input position-static" type="checkbox" id="blankCheckbox"
+                                value="option1" style="width: 15px; height: 15px;">
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <h5>1.</h5>
+                    </div>
+                    <div class="col">
+                        <p>1. a member of the genus Canis (probably descended from the common wolf) that has been
+                            domesticated by man since prehistoric times; occurs in many breeds</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitRecommendType()">確定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    $(document).ready(function () {
+        $.ajaxSetup({
+            data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+        });
+    });
+
+    function getSysets() {
+        typeInput = document.getElementById("type").value;
+        if (typeInput == '') {
+            swal("提示", "尚未輸入內容", "warning");
+        } else {
+            // getUrl = "{% url 'getSysets' 123 %}".replace(/123/, type.toString());
+            getUrl = "{% url 'getSysets' input='input' %}".replace('input', typeInput.toString());
+            // getUrl = ("http://" + location.host + "/instagram/getSysets/"+type);
+            console.log(getUrl);
+
+            $("#loading").modal("show")
+            $("#loading").on("shown.bs.modal", function () {
+                $.ajax({
+                    type: "GET",
+                    url: getUrl,
+                    async: false,
+                    success: function (response) {
+                        if (response['success']) {
+                            console.log(response);
+                            $('#sysets').empty();
+                            sysets = response['sysets']
+                            order = 1
+                            sysets.forEach(syset => {
+
+                                $('#sysets').append(`
+                            <div class="row">
+                                <div class="col-auto ">
+                                    <div class="form-check">
+                                        <input class="syset form-check-input position-static" type="checkbox"
+                                            value="${syset['syset']}" style="width: 15px; height: 15px;">
+                                    </div>
+                                </div>
+                                
+                                <div class="col ml-0 pl-0">
+                                    <p><b>${order}.</b>&nbsp;&nbsp;${syset['definition']}</p>
+                                </div>
+                            </div>
+                        `)
+                                order = order + 1
+
+                            });
+
+                            $('#selectSynsets').modal('show');
+                            $("#loading").modal("hide");
+                        } else {
+                            console.log(response);
+                            Swal.fire({
+                                type: 'warning',
+                                title: response['message'],
+                                text: '',
+                            })
+                        }
+
+                    },
+                    error: function (response) {
+                        console.log(response);
+                        swal("提示", "unknow error", "warning");
+                    },
+
+                })
+            })
+            
+
+        }
+
+        // console.log(type);
+
+
+    }
+
+    function submitRecommendType() {
+        var data = {}
+        data['sysets'] = ''
+        var sysetArray = document.getElementsByClassName("syset");
+        for (var i = 0; i < sysetArray.length; i++) {
+            if (sysetArray[i].checked) {
+                data['sysets'] = data['sysets'] + sysetArray[i].value + " ";
+            }
+            // sysetArray[i].innerHTML = type;
+        }
+        console.log(data['sysets']);
+
+        if (data['sysets'] == '') {
+            Swal.fire({
+                type: 'warning',
+                title: '必須選擇一個',
+                text: '',
+            })
+        } else {
+            getUrl = "{% url 'recommendNewType' %}";
+            console.log(getUrl);
+            $.ajax({
+                type: "GET",
+                url: getUrl,
+                data: data,
+                dateType: "json",
+                async: false,
+                success: function (response) {
+
+                    if (response['success']) {
+                        Swal.fire({
+                            type: 'success',
+                            title: response['message'],
+                            text: '',
+                            confirmButtonColor: '#3085d6',
+                            confirmButtonText: 'OK'
+                        }).then((result) => {
+                            if (result.value) {
+                                window.location.reload('')
+                            }
+                        })
+
+                    } else {
+                        console.log(response);
+                        Swal.fire({
+                            type: 'warning',
+                            title: response['message'],
+                            text: '',
+                        })
+                    }
+
+                },
+                error: function (response) {
+                    console.log(response);
+                    swal("提示", "unknow error", "warning");
+                },
+
+            })
+        }
+
+    }
+
+    function submitRecommendType2() {
+        var data = {}
+        data['type'] = typeInput = document.getElementById("type").value;
+        
+        console.log(data['type']);
+
+        if (data['type'] == '') {
+            Swal.fire({
+                type: 'warning',
+                title: '必須填入',
+                text: '',
+            })
+        } else {
+            getUrl = "{% url 'recommendNewType' %}";
+            console.log(getUrl);
+            $.ajax({
+                type: "GET",
+                url: getUrl,
+                data: data,
+                dateType: "json",
+                async: false,
+                success: function (response) {
+
+                    if (response['success']) {
+                        Swal.fire({
+                            type: 'success',
+                            title: response['message'],
+                            text: '',
+                            confirmButtonColor: '#3085d6',
+                            confirmButtonText: 'OK'
+                        }).then((result) => {
+                            if (result.value) {
+                                window.location.reload('')
+                            }
+                        })
+
+                    } else {
+                        console.log(response);
+                        Swal.fire({
+                            type: 'warning',
+                            title: response['message'],
+                            text: '',
+                        })
+                    }
+
+                },
+                error: function (response) {
+                    console.log(response);
+                    swal("提示", "unknow error", "warning");
+                },
+
+            })
+        }
+
+    }
+
+    function recommendNewUser() {
+        data = {}
+        data['account'] = document.getElementById("account").value;
+        console.log(data);
+        if (data['account'] == '' || data['account'] == ''.indexOf(" ") >= 0) {
+            Swal.fire({
+                type: 'warning',
+                title: '不能為空',
+                text: '',
+            })
+        } else {
+            getUrl = "{% url 'recommendNewUser' %}";
+            console.log(getUrl);
+
+            $.ajax({
+                type: "GET",
+                url: getUrl,
+                data: data,
+                dateType: "json",
+                async: false,
+                success: function (response) {
+
+                    if (response['success']) {
+                        console.log(response);
+                        Swal.fire({
+                            type: 'success',
+                            title: response['message'],
+                            text: '',
+                            confirmButtonColor: '#3085d6',
+                            confirmButtonText: 'OK'
+                        }).then((result) => {
+                            if (result.value) {
+                                window.location.reload('')
+                            }
+                        })
+
+                    } else {
+                        console.log(response);
+                        Swal.fire({
+                            type: 'warning',
+                            title: response['message'],
+                            text: '',
+                        })
+                    }
+
+                },
+                error: function (response) {
+                    console.log(response);
+                    swal("提示", "unknow error", "warning");
+                },
+
+            })
+        }
+
+
+    }
+
+</script>
+{% endblock %}

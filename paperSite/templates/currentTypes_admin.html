@@ -1,0 +1,187 @@
+{% extends "layouts/layout2.html" %}
+{% block title %}<title>目前分類（多模型）</title>{% endblock %}
+{% block content %}
+
+<div class="container text-center" style="padding:80px 0px">
+
+    <section id="searchResult" style="padding-top: 0px; margin-bottom: 30px">
+
+        <div class="row justify-content-md-center my-5">
+            <div class="col-md-6">
+                <header class="section-header">
+                    <h2><b>目前分類(多模型)</b></h2>
+                </header>
+
+            </div>
+        </div>
+        <div class="row justify-content-md-center my-3">
+            <div class="col-md-4">
+
+                <h2><b>選取分類及比例</b></h2>
+
+
+            </div>
+        </div>
+        <div class="row justify-content-md-center my-3">
+            <div class="col-md-8 " style="padding: 0">
+                <h3 id="similarTypes">
+                    選取分類：
+                    {% for type in types %}
+                    
+                        {% if forloop.counter == 1 %}
+                        <a href="javascript:void(0);" class="types" onclick="changeType('{{type}}')">{{type}}</a>
+                        {% else %}
+                        、<a href="javascript:void(0);" class="types" onclick="changeType('{{type}}')">{{type}}</a>
+                        {% endif %}
+                        
+                    {% endfor %}
+
+                </h3>
+            </div>
+        </div>
+
+        <div class="row justify-content-md-center  my-2 ">
+            <div class="col-md-3">
+                <h3>選擇模型：</h3>
+                <select class="form-control" id="model" onchange="getData()"
+                    style="margin-bottom: 5px; text-align-last:center; font-size:16px;">
+                    
+                    {% for model in models %}
+                    <option value={{model}}>{{model}}</option>
+                    {% endfor %}
+                    <option selected="selected" value="wordNet">wordNet</option>
+                    <!-- <option value="GoogleNews-vectors-negative300.bin">GoogleNews-vectors-negative300.bin</option>
+                    <option value="zen.text.vector">zen.text.vector</option>
+                    <option value="zhfn.model.bin">zhfn.model.bin</option>
+                    <option selected="selected" value="zhfn40055sg1.model.bin">zhfn40055sg1.model.bin</option> -->
+                </select>
+            </div>
+            <div class="col-md-3">
+                <h3>貼文數量：</h3>
+                <select class="form-control" id="postNum" onchange="getData()"
+                    style="margin-bottom: 5px; text-align-last:center; font-size:16px;">
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option selected="selected" value="150">150(預設)</option>
+                    <option value="200">200</option>
+                    <option value="250">250</option>
+                    <option value="300">300</option>
+
+                </select>
+            </div>
+            <!-- <div class="col-md-3">
+                <h3>圖片比影片的比重:</h3>
+                <select class="form-control f18" id="rate" onchange="getData()"
+                    style="margin-bottom: 5px; text-align-last:center; font-size:16px;  ">
+                    <option value="10:0">10:0</option>
+                    <option value="9:1">9:1</option>
+                    <option selected="selected" value="8:2">8:2(預設)</option>
+                    <option value="7:3">7:3</option>
+                    <option value="6:4">6:4</option>
+                </select>
+            </div> -->
+        </div>
+
+        <div id="result" style="display:none">
+            {% include "layouts/table.html" %}
+        </div>
+
+
+    </section>
+</div>
+
+
+
+<script>
+
+    type = '';
+    $(document).ready(function () {
+
+    });
+
+    function changeType(type) {
+        this.type = type;
+        var FTArray = document.getElementsByClassName("finalType");
+        for (var i = 0; i < FTArray.length; i++) {
+            console.log(type);
+            FTArray[i].innerHTML = type;
+        }
+        getData();
+    }
+
+    function getData() {
+        console.log(this.type)
+        model = document.getElementById("model").value;
+        postNum = document.getElementById("postNum").value;
+        // rate = document.getElementById("rate").value;
+        // imageRate = rate.split(":")[0];
+        // videoRate = rate.split(":")[1];
+        getUrl = ("/instagram/getAdminData/"+ model + "/" + this.type + "/" + postNum);
+        console.log(getUrl)
+        $.ajax({
+            type: "GET",
+            url: getUrl,
+            dateType: "json",
+            async: false,
+            success: function (response) {
+
+                if (response['success']) {
+                    console.log(response);
+                    $('#resultTable').empty()
+                    score = response['score']
+
+                    order = 1
+                    score.forEach(user => {
+                        
+                        if (user['video']['amount']==0) {
+                            user['video']['score'][type] = '沒有影片';
+                        }
+                        $('#resultTable').append(`
+                            <tr>
+                                <th scope="row">${order}</th>
+                                <td onClick="window.open('https://www.instagram.com/${user['name']}/')" style="color:#007bff; cursor: pointer;"> 
+                                    <a>${user['name']}</a>
+                                </td>
+                                <td>${user['image']['score'][type]} (${user['image']['amount']})</td>
+                                <td>${user['video']['score'][type]} (${user['video']['amount']})</td>
+
+                                <td>${user['follower']}</td>
+                                <td>${user['like']}</td>
+                                <td>${user['comment']}</td>
+                                <td>${user['ERate']}</td>
+                                
+                            </tr>
+                        `)
+                        order = order + 1
+                        
+                    });
+                    $('#dataTable').DataTable({
+                        searching: false,
+                        paging: false,
+                        data: false,
+                        serverSide: false,
+                        retrieve: true,
+                        "bInfo": false
+                    });
+                    $('#result').show()
+
+                } else {
+                    console.log(response);
+                    Swal.fire({
+                        type: 'warning',
+                        title: 'Oops...',
+                        text: response['message'],
+                    })
+                }
+
+            },
+            error: function (response) {
+                console.log(response);
+                swal("提示", "請先選取分類", "warning");
+            },
+
+        })
+    }
+</script>
+
+{% endblock %}
