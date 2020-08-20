@@ -8,19 +8,42 @@ import json
 import time
 import random
 import requests
-import collections
 from os import listdir
 from hashlib import md5
 from pyquery import PyQuery as pq
-from itertools import combinations #計算排列組合 
-from nltk.corpus import wordnet as wn
-from datetime import datetime
 
 # Imports the Google Cloud client library
 from google.cloud import vision
 from google.cloud.vision import types
-
 from google.cloud import videointelligence
+
+
+# 需要爬的網紅 變數資料型態必須為List
+usersName = ["user1", "user2"]
+
+# 最新貼文數量
+maxPost = 320
+
+# 取得Label的API最低分數
+APIMinScore = 0.7
+
+# 所有資料將儲存的資料夾
+storeFolder = 'D:\\instagram'
+
+# 儲存網紅貼文資料的json檔案 包含貼文中的標籤
+usersDataFile = "D:\\instagram\\usersData.json"
+
+# Django網頁平台讀取100張圖片的url
+usersUrlsFile = "D:\\instagram\\usersUrls20200312.json"
+
+# API的金鑰憑證json檔的路徑
+credential_path = 'D:\\APIKey.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credential_path
+
+client = vision.ImageAnnotatorClient()
+
+video_client = videointelligence.VideoIntelligenceServiceClient()
+features = [videointelligence.enums.Feature.LABEL_DETECTION]
 
 url_base = 'https://www.instagram.com/'
 uri = 'https://www.instagram.com/graphql/query/?query_hash=a5164aed103f24b03e7b7747a2d94e3c&variables=%7B%22id%22%3A%22{user_id}%22%2C%22first%22%3A12%2C%22after%22%3A%22{cursor}%22%7D'
@@ -29,16 +52,6 @@ headers = {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
     'cookie': 'csrftoken=clEUpQamQkCExoxJjDPjWWCZTHYSU7O9; mid=XNz4mAALAAHBH-Comwo8lpvwN-yN; rur=PRN; urlgen="{\"61.218.134.33\": 3462}:1hRG6Y:UVQcciDZf4C8ZYFbrtPSK1eoOO4" fbsr_124024574287414='' '
 }
-
-credential_path = 'D:\\paper.json'
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credential_path
-
-# Instantiates a client
-client = vision.ImageAnnotatorClient()
-
-"""Detect labels given a file path."""
-video_client = videointelligence.VideoIntelligenceServiceClient()
-features = [videointelligence.enums.Feature.LABEL_DETECTION]
 
 
 def get_html(url):
@@ -106,17 +119,14 @@ def processImage(content):
             time.sleep(10)
     
     result = response.label_annotations
-    
-    # print(result)
 
     resultLabels = []
     for label in result:
-        if label.score > 0.7:
+        if label.score > APIMinScore:
             try:
                 tmp = label.description.split(" ")
                 resultLabels.append( tmp[len(tmp)-1].lower() )
             except:
-                # resultLabels.append( result[i][0].lower() )
                 resultLabels.append( label.description.lower() )
     
     return resultLabels
@@ -177,7 +187,7 @@ def processVideo(content):
 
     resultLabels = []
     for i in range(0, len(resultDic)):
-        if resultDic[i][1] > 0.7:
+        if resultDic[i][1] > APIMinScore:
             try:
                 tmp = resultDic[i][0].split(" ")
                 resultLabels.append( tmp[len(tmp)-1].lower() )
@@ -208,7 +218,6 @@ def getData(edge, userData):
             del userData['data'][timestamp]['display_url']
         
         try:
-            # userData['data'][timestamp]['video_url'] = edge['node']['video_url']
             content = get_content(edge['node']['video_url'])
             
         except KeyError:
@@ -269,16 +278,6 @@ def getData(edge, userData):
     userData['data'][timestamp]['likes'] = edge['node']['edge_media_preview_like']['count']
     userData['data'][timestamp]['comments'] = edge['node']['edge_media_to_comment']['count']
 
-    # try:
-    #     # rule = re.compile( u"[^\u4e00-\u9fa5]" )
-    #     rule = re.compile( u"[^\u4e00-\u9fa5^.^a-z^A-Z^' ']" )
-    #     userData['data'][timestamp]['caption'] = rule.sub( '', edge['node']['edge_media_to_caption']['edges'][0]['node']['text'] )
-    # except:
-    #     userData['data'][timestamp]['caption'] = ''
-    #     print("無貼文內容")
-
-    # if 'caption' in userData['data'][timestamp]:
-    #     del userData['data'][timestamp]['caption']
     
     if broken:
         del userData['data'][timestamp]
@@ -293,7 +292,6 @@ def update(user, userData):
     print( '\n'+user+'\n\n' )
 
     countPost = 0
-    maxPost = 350
     
     url = url_base + user + '/'
     html = get_html(url)
@@ -310,20 +308,16 @@ def update(user, userData):
             flag = page_info['has_next_page']
             
             countFollowers = js_data["entry_data"]["ProfilePage"][0]["graphql"]["user"]["edge_followed_by"]["count"]
-            print( countFollowers )
-            # userData['followers'] = countFollowers
+            userData['followers'] = countFollowers
 
             for edge in edges:
                 
                 countPost += 1
-                # timeArray = time.localtime(edge['node']['taken_at_timestamp'])
-                # otherStyleTime = time.strftime("%Y-%m-%d %H:%M:%S", timeArray)
-                # print(otherStyleTime)
 
                 timestamp = edge['node']['taken_at_timestamp']
 
+                # 2020/03/11 23:59:59
                 if  int(timestamp) < 1584028799:
-                    print( datetime.fromtimestamp(timestamp) )
                     getData(edge, userData)
                     print("目前讀取貼文數量 : {} \n".format(countPost))
                     print('\n')
@@ -342,8 +336,8 @@ def update(user, userData):
                 break
             
             timestamp = edge['node']['taken_at_timestamp']
+            # 2020/03/11 23:59:59
             if  int(timestamp) < 1584028799:
-                print( datetime.fromtimestamp(timestamp) )
                 getData(edge, userData)
                 print("目前讀取貼文數量 : {} \n".format(countPost))
                 print('\n')
@@ -355,9 +349,9 @@ def update(user, userData):
         # if countPost > 2000, turn on
         # time.sleep(4 + float(random.randint(1, 800))/200)
 
-        time.sleep(2 + float(random.randint(1, 800))/200)
 
     # userData = [ ( k,userData[k] ) for k in sorted( userData.keys() ) ]
+    # 照timestamp排序
     sortData = {}
     for k in sorted( userData['data'].keys(), reverse=True ):
         sortData[k] = userData['data'][k]
@@ -370,7 +364,6 @@ def update(user, userData):
 
 def setUserUrls(userData, user):
 
-    usersUrlsFile = "D:\\g1080265\\instagram\\usersUrls20200312.json"
     if not os.path.exists(usersUrlsFile):
         with open(usersUrlsFile, "w") as dump_f:
             usersUrls = {}
@@ -418,33 +411,16 @@ def setUserUrls(userData, user):
     with open(usersUrlsFile, "w") as dump_f:
         json.dump(usersUrls, dump_f)
 
-    print( len(usersUrls[user]) )
-    print('\n\n\n\n\n')
 
 
 if __name__ == '__main__':
     
     start = time.time()
 
-
-    storeFolder = 'D:\\instagram'
     if not os.path.exists(storeFolder):
         os.mkdir(storeFolder)
 
-    # with open("D:\\g1080265\\instagram\\users.json", 'r') as load_f:
-    #     userNames = json.load(load_f)['users']
-    #     print(userNames)
-    # userNames = [ line.rstrip('\n') for line in open('D:\\g1080265\\instagram\\questionnaire_vehicle.txt', 'r') if line.rstrip('\n') != '' ]
-    # userNames = [ line.rstrip('\n') for line in open('D:\\g1080265\\instagram\\questionnaire_animal.txt', 'r') if line.rstrip('\n') != '' ]
-    # userNames = ['motorcycledreams']
-    # userNames = ["bernese.life"]
-    userNames = [ line.rstrip('\n') for line in open('D:\\g1080265\\instagram\\users_sure.txt', 'r') if line.rstrip('\n') != '']
-    userNames = ['dogs.associates']
 
-    for user in userNames:
-        print(user)
-
-    usersDataFile = "D:\\g1080265\\instagram\\usersData.json"
     if not os.path.exists(usersDataFile):
         with open(usersDataFile, "w") as dump_f:
             usersData = {}
@@ -453,7 +429,8 @@ if __name__ == '__main__':
         with open(usersDataFile, 'r') as load_f:
             usersData = json.load(load_f)
 
-    for user in userNames:
+
+    for user in usersName:
 
         userPath = r'{}\{}'.format(storeFolder, user)
         imgPath = r'{}\{}'.format(userPath, 'image')
@@ -474,8 +451,9 @@ if __name__ == '__main__':
             with open(usersDataFile, "w") as dump_f:
                 json.dump(usersData, dump_f)
             
-            # print( usersData[user] )
+            # 設定評分用的前100張圖片的json檔案
             setUserUrls(usersData[user], user)
+
 
         except IndexError:
             print( user )
