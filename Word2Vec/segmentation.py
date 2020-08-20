@@ -12,6 +12,7 @@ class Segmentation(object):
 		# 用默認 Formatter 為日誌系統建立一個 StreamHandler ，設置基礎配置並加到 root logger 中
 		logging.basicConfig(format = "%(asctime)s : %(levelname)s : %(message)s", level = logging.INFO)
 		# self.stopwordset = set()
+		# 使用NLTK StopWords
 		self.stopwordset = stopwords.words('english')
 
 	# 讀取 stopword 辭典，並存到 stopwordset
@@ -36,7 +37,7 @@ class Segmentation(object):
 	def segmentation(self):
 		logging.info("等待中..(jieba 斷詞，並過濾停用詞)")
 		
-		segmentation = open("D:\\word2vec\\trash\\segmentation.txt", "w", encoding = "utf-8")
+		segmentation = open("segmentation.txt", "w", encoding = "utf-8")
 		with open("wiki_text.txt", "r", encoding = "utf-8") as Corpus:
 			for sentence in Corpus:
 				sentence = sentence.strip("\n")
@@ -55,5 +56,5 @@ if __name__ == "__main__":
 	# data 進行簡體轉繁體
 	# segmentation.simplified_to_traditional()
 	
-	# 進行 jieba 斷詞同步過濾停用詞，並產生辭典
+	# 進行 jieba 斷詞同步過濾nltk.corpus停用詞，並產生辭典
 	segmentation.segmentation()
