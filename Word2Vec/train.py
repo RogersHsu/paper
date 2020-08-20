@@ -17,11 +17,11 @@ class Train(object):
 	def train(self):
 		print("訓練中...(喝個咖啡吧^0^)")
 		# Load file
-		sentence = word2vec.Text8Corpus("D:\\word2vec\\trash\\segmentation.txt")
+		sentence = word2vec.Text8Corpus("segmentation.txt")
 		# Setting degree and Produce Model(Train)
 		model = word2vec.Word2Vec(sentence, size = 300, window = 5, min_count = 10, iter=5, sg=1, workers=4)
 		# Save model
-		model.wv.save_word2vec_format(u"D:\\word2vec\\model\\zhfn300w5m10it5sg1.model.bin", binary = True)
+		model.wv.save_word2vec_format(u"zhfn300w5m10it5sg1.model.bin", binary = True)
 		print("model1 已儲存完畢")
 
 if __name__ == "__main__":
