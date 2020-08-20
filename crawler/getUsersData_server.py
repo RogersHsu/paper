@@ -376,8 +376,8 @@ def setUserUrls(userData, user):
     print( user )
     usersUrls[user] = []
 
-    imgFiles = listdir("D:\\instagram\\{}\\image".format(user))
-    vieFiles = listdir("D:\\instagram\\{}\\video".format(user))
+    imgFiles = listdir("{}\\{}\\image".format(storeFolder, user))
+    vdoFiles = listdir("{}\\{}\\video".format(storeFolder, user))
 
     count = 0    
     for timestamp in userData['data']:
@@ -386,7 +386,7 @@ def setUserUrls(userData, user):
             
 
             urlData = {}
-            if userData['data'][timestamp]['is_video']  and  '{}.{}'.format(timestamp, 'mp4') in vieFiles:
+            if userData['data'][timestamp]['is_video']  and  '{}.{}'.format(timestamp, 'mp4') in vdoFiles:
                 urlData['is_video'] = True
                 urlData['video_url'] = ( 'instagram/{}/{}/{}.{}'.format(user, 'video', timestamp, 'mp4') )
                 count += 1
