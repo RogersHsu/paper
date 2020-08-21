@@ -4,19 +4,25 @@ import gensim
 import random
 from os.path import isfile, isdir, join
 
+# 需要被計算的分類
 myTypes = ['animal', 'vehicle',  'food', 'fashion', 'dog', 'cat', 'car', 'motorcycle']
 
-#photography life makeup 
+# 計算完網紅權重存放的位置
+scorePath = "D:\\instagram\\score"
 
-usersDataFile = "D:\\g1080265\\instagram\\usersData.json"
+# getUsersData.py儲存網紅貼文資料的json檔案，拿來計算分數
+usersDataFile = "D:\\instagram\\usersData.json"
 with open(usersDataFile, 'r') as load_f:
     usersData = json.load(load_f)
+
+# 訓練好的Word2Vec model的存放位置，該位置只能放Word2Vec Model，否則會拋出例外
+modelPath = "D:\\word2vec\\model\\"
 
 def getScore(model):
     
     new_dic = {}
-    scoreFile = ("D:\\g1080265\\instagram\\score\\{}.json".format( model ) )
-    print(scoreFile)
+    scoreFile = ("{}\\{}.json".format( scorePath, model ) )
+    
     if not os.path.exists(scoreFile):
         with open(scoreFile,"w") as dump_f:
             new_dic['50'] = list()
@@ -81,60 +87,20 @@ def getScore(model):
                         maxScore2 = 0
 
                         for label in usersData[user]['data'][timestamp]['labels']:
-                            # 當type是car時為了讓 屬於motorcycle的帳號car的分數低
-                            if (t=='car' and 'motorcycle' in usersData[user]['data'][timestamp]['labels']):
-                                maxScore = 0.4
-                                continue
-                            
-                            # 當type是motorcycle時為了讓 屬於car的帳號motorcycle的分數低 但是要避免掉排除是motorcycle 又有car
-                            if (t=='motorcycle' and 'car' in usersData[user]['data'][timestamp]['labels'] and 'motorcycle' not in usersData[user]['data'][timestamp]['labels']):
-                                maxScore = 0.4
-                                continue
 
-                            
-
-                            # if (t == 'car' and label == 'motorcycle') or (t=='motorcycle' and 'car' in usersData[user]['data'][timestamp]['labels']):
-                            #     continue
-                            # if (t == 'motorcycle' and label == 'car') or (t=='car' and label == 'motorcycle'):
-                            #     continue
 
                             try:
                                 score = word_vectors.similarity(t, label)
                             except:
                                 score = 0
-                            if score > maxScore:
-                                # print( 'type:{} vs result:{}'.format(t, label) )
-                                maxScore = score
-                                # 當type是 dog 時為了讓 屬於cat的帳號 dog 的分數低
-                                if (t=='dog' and 'cat' in usersData[user]['data'][timestamp]['labels']):
-                                    maxScore -= 0.15
-
-                                # 當type是 cat 時為了讓 屬於dog的帳號 cat 的分數低
-                                if (t=='cat' and 'dog' in usersData[user]['data'][timestamp]['labels']):
-                                    maxScore -= 0.2
-
+                            
 
                         if usersData[user]['data'][timestamp]['is_video']:
-                            # print( '這部影片在{}獲得{}分'.format(t, maxScore) )
                             videoScoreDic[t] += maxScore
                             
                         else:
-                            # print( '這張圖片在{}獲得{}分'.format(t, maxScore) )
                             imageScoreDic[t] += maxScore
-                    
-                        # print('\n')
-       
-                
-            # print('\n')
-            # print("{}目前圖片個數 : {}".format(user, countImages))
-            # print("{}目前在每個分類的總分:".format(user))
-            # print(imageScoreDic)
-            # print('\n')
-            # print("{}目前影片個數 : {}".format(user, countVideos))
-            # print("{}目前在每個分類的總分:".format(user))
-            # print("{}目前在每個分類的總分:".format(user))
-            # print(videoScoreDic)
-            # print('\n\n')
+
 
             if  countPost != 0 and countPost % 50 == 0 :
                 print(countPost)
@@ -210,8 +176,10 @@ def getScore(model):
 
 if __name__ == '__main__':
 
-    path = "D:\\word2vec\\model\\"
-    for f in os.listdir("D:\\word2vec\\model\\"):
+    if not os.path.exists(scorePath):
+        os.mkdir(scorePath)
+    
+    for f in os.listdir(path):
         
         fullpath = join(path, f)
         
