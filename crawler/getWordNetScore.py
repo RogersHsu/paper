@@ -5,9 +5,14 @@ from nltk.corpus import wordnet as wn
 from itertools import combinations #計算排列組合 
 
 
+# 需要被計算的分類
 myTypes = ['animal', 'vehicle',  'food', 'fashion', 'dog', 'cat', 'car', 'motorcycle']
 
-usersDataFile = "D:\\g1080265\\instagram\\usersData.json"
+# 計算完網紅權重存放的位置
+scorePath = "D:\\instagram\\score"
+
+# getUsersData.py儲存網紅貼文資料的json檔案，拿來計算分數
+usersDataFile = "D:\\instagram\\usersData.json"
 with open(usersDataFile, 'r') as load_f:
     usersData = json.load(load_f)
 
@@ -61,7 +66,7 @@ def get_similar_words(words):
 def getWordNetScore(model):
     
     new_dic = {}
-    scoreFile = ("D:\\g1080265\\instagram\\score\\{}.json".format( model ) )
+    scoreFile = ("{}\\{}.json".format( scorePath, model ) )
     print(scoreFile)
     if not os.path.exists(scoreFile):
         with open(scoreFile,"w") as dump_f:
