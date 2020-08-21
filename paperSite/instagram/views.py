@@ -22,6 +22,21 @@ date['nextMonday'] = nextMonday
 date['thisMonday'] = thisMonday
 date['today'] = today
 
+
+# 主要的分類
+myTypes = [ 'animal', 'vehicle', 'food', 'fashion' ]
+
+# 最後決定的Word2Vec model的路徑
+word_vectors = gensim.models.KeyedVectors.load_word2vec_format( ('D:\\word2vec\\model\\zhfn150w5m10it5sg1.model.bin'), binary=True )
+
+# 最後決定的Word2Vec model計算出來的權重資料
+scoreDic = {}
+scoreFile = "D:\\g1080265\\instagram\\score\\zhfn100w5m5it5sg1.model.bin.json"
+with open(scoreFile, 'r') as load_f:
+    load_dict = json.load(load_f)
+    scoreDic = load_dict
+
+# API的金鑰憑證json檔的路徑
 credential_path = 'D:\\paper.json'
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credential_path
 
@@ -29,22 +44,6 @@ headers = {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
     'cookie': 'csrftoken=clEUpQamQkCExoxJjDPjWWCZTHYSU7O9; mid=XNz4mAALAAHBH-Comwo8lpvwN-yN; rur=PRN; urlgen="{\"61.218.134.33\": 3462}:1hRG6Y:UVQcciDZf4C8ZYFbrtPSK1eoOO4" fbsr_124024574287414='' '
 }
-
-myTypes = [ 'animal', 'vehicle', 'food', 'fashion' ]
-
-word_vectors = gensim.models.KeyedVectors.load_word2vec_format( ('D:\\word2vec\\model\\zhfn150w5m10it5sg1.model.bin'), binary=True )
-
-scoreDic = {}
-scoreFile = "D:\\g1080265\\instagram\\score\\zhfn100w5m5it5sg1.model.bin.json"
-with open(scoreFile, 'r') as load_f:
-    load_dict = json.load(load_f)
-    scoreDic = load_dict
-
-types = {}
-scoreFile = "D://g1080265//instagram//types.json"
-with open(scoreFile, 'r') as load_f:
-    types = json.load(load_f)
-
 
 def index(request):
     return render(request, 'index.html', {'date': date,})
@@ -65,7 +64,7 @@ def search(request):
     print(zh_tw)
     if(zh_tw):
         usefulWords = []
-        stopWordSet = [ line.rstrip('\n') for line in open('D:\\g1080265\\paperSite\\instagram\\stopWords.txt', 'r', encoding="utf-8") ]
+        stopWordSet = [ line.rstrip('\n') for line in open('stopWords.txt', 'r', encoding="utf-8") ]
         for word in jieba.cut(text, cut_all = False):
             print(word)
             if word not in stopWordSet:
@@ -98,36 +97,7 @@ def search(request):
                 except:
                     finalWords.append(  word.lower() )
     
-    # print('finalWords', finalWords)
 
-    # if len(text) > 1:
-    #     keyWords = []
-
-    #     for word, pos in nltk.pos_tag(text):
-    #         if (pos == 'NN' or pos == 'NNP' or pos == 'NNS' or pos == 'NNPS'):
-    #             print( "{}({})".format(word, pos) )
-    #             keyWords.append(word)
-    # else:
-    #     keyWords = text
-    # myTypes = ["cat.n.01", "dog.n.01", "fashion.n.03", "fashion.n.04", "food.n.01"]
-    # print(keyWords)
-    # similarTypes = {}
-    # for word in keyWords:
-    #     for ws in wn.synsets(word):
-    #         for t in myTypes:
-
-    #             ts = wn.synset( t )
-    #             score = ws.wup_similarity(ts)
-
-    #             if (score is not None) and (score > 0.7):
-    #                 print("{}:{} : {}".format(word, ws, ws.definition()) )
-    #                 print("{}:{} vs {} = {}".format(word, ws, ts, score))
-    #                 print("\n")
-    #                 tp = t.split(".")[0] 
-    #                 if tp not in similarTypes:
-    #                     similarTypes[ str(t.split(".")[0]) ] = score
-    #                 elif (tp in similarTypes) and (score>similarTypes[tp]):
-    #                     similarTypes[ str(t.split(".")[0]) ] = score
     similarTypes = {}
     for word in finalWords:
         for type in myTypes:
@@ -249,10 +219,9 @@ def recommendNewType(request):
 
     newType = request.GET['type']
 
-    typesFile = "D://g1080265//instagram//recommend_types.txt"
+    typesFile = "recommend_types.txt"
     types = [ line.rstrip('\n') for line in open(typesFile, 'r') if line.rstrip('\n') != '']
-    types.extend( [ line.rstrip('\n') for line in open('D:\\g1080265\\instagram\\types.txt', 'r') if line.rstrip('\n') != ''] )
-    
+
     if newType in types:
         responseDic['success'] = False
         responseDic['message'] = "已有人推薦此分類"
@@ -285,9 +254,9 @@ def recommendNewUser(request):
 
     responseDic = {}
 
-    usersFile = "D://g1080265//instagram//recommend_users.txt"
+    usersFile = "recommend_users.txt"
     userNames = [ line.rstrip('\n') for line in open(usersFile, 'r') if line.rstrip('\n') != '']
-    userNames.extend( [ line.rstrip('\n') for line in open('D:\\g1080265\\instagram\\users_sure.txt', 'r') if line.rstrip('\n') != ''] )
+    userNames.extend( [ line.rstrip('\n') for line in open('users_sure.txt', 'r') if line.rstrip('\n') != ''] )
 
     if newAccount in userNames:
         responseDic['success'] = False
@@ -329,14 +298,14 @@ def getUsers(request, postNum):
 
 
 def questionnaire_animal(request):
-    userNames = [ line.rstrip('\n') for line in open('D:\\g1080265\\instagram\\questionnaire_animal.txt', 'r') if line.rstrip('\n') != '']
+    userNames = [ line.rstrip('\n') for line in open('questionnaire_animal.txt', 'r') if line.rstrip('\n') != '']
     types = ['dog', 'cat']
     qType = 'animal'
     return render(request, 'questionnaire_urls.html', {'types': types, 'users':userNames, 'qType':qType})
 
 
 def questionnaire_vehicle(request):
-    userNames = [ line.rstrip('\n') for line in open('D:\\g1080265\\instagram\\questionnaire_vehicle.txt', 'r') if line.rstrip('\n') != '']
+    userNames = [ line.rstrip('\n') for line in open('questionnaire_vehicle.txt', 'r') if line.rstrip('\n') != '']
     types = ['car', 'motorcycle']
     qType = 'vehicle'
     return render(request, 'questionnaire_urls.html', {'types': types, 'users':userNames, 'qType':qType})
@@ -347,7 +316,7 @@ def getUserUrls(request, userName):
     responseDic = {}
     responseDic['success'] = True
     
-    with open("D:\\g1080265\\instagram\\usersUrls20200312.json", 'r') as load_f:
+    with open("usersUrls20200312.json", 'r') as load_f:
         usersUrls = json.load(load_f)
     
     print(userName)
@@ -362,7 +331,7 @@ def submitScore( request, userName, value1, value2, qType):
 
     responseDic = {}
     
-    questionnaireScoreFile = "D:\\g1080265\\instagram\\questionnaire_scores.json"
+    questionnaireScoreFile = "questionnaire_scores.json"
     if not os.path.exists(questionnaireScoreFile):
         with open(questionnaireScoreFile, "w") as dump_f:
             qScore = {}
