@@ -1,6 +1,5 @@
 import os
 import json
-import gensim
 from nltk.corpus import wordnet as wn
 from itertools import combinations #計算排列組合 
 
@@ -9,10 +8,10 @@ from itertools import combinations #計算排列組合
 myTypes = ['animal', 'vehicle',  'food', 'fashion', 'dog', 'cat', 'car', 'motorcycle']
 
 # 計算完網紅權重存放的位置
-scorePath = "D:\\instagram\\score"
+scorePath = "..\\data\\score"
 
 # getUsersData.py儲存網紅貼文資料的json檔案，拿來計算分數
-usersDataFile = "D:\\instagram\\usersData.json"
+usersDataFile = "..\\data\\usersData.json"
 with open(usersDataFile, 'r') as load_f:
     usersData = json.load(load_f)
 
