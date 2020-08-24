@@ -18,8 +18,10 @@ from google.cloud.vision import types
 from google.cloud import videointelligence
 
 
-# 需要爬的網紅 變數資料型態必須為List
-usersName = ["corgimango"]
+# 需要爬的網紅 的id文字檔
+usersSureFile = "..\\data\\users_sure.txt"
+# 變數資料型態必須為List
+userNames = [ line.rstrip('\n') for line in open(usersSureFile, 'r') if line.rstrip('\n') != '']
 
 # 需要爬取的貼文時間
 newestTime = 1584028799 # 本論文設定在2020/03/11 23:59:59
@@ -36,7 +38,7 @@ storeFolder = '..\\data'
 # 儲存網紅貼文資料的json檔案 包含貼文中的標籤
 usersDataFile = "..\\data\\usersData.json"
 
-# Django網頁平台讀取100張圖片的url
+# Django網頁平台讀取問卷使用者的100張圖片的url
 usersUrlsFile = "..\\data\\usersUrls20200312.json"
 
 # API的金鑰憑證json檔的路徑
