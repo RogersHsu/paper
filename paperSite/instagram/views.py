@@ -26,24 +26,48 @@ date['today'] = today
 # 主要的分類
 myTypes = [ 'animal', 'vehicle', 'food', 'fashion' ]
 
+# 問卷分類
+qunTypes = ['dog', 'cat', 'car', 'motorcycle']
+
 # 最後決定的Word2Vec model的路徑
-word_vectors = gensim.models.KeyedVectors.load_word2vec_format( ('D:\\word2vec\\model\\zhfn150w5m10it5sg1.model.bin'), binary=True )
+word_vectors = gensim.models.KeyedVectors.load_word2vec_format( ('..\\..\\data\\model\\zhfn150w5m10it5sg1.model.bin'), binary=True )
 
 # 最後決定的Word2Vec model計算出來的權重資料
 scoreDic = {}
-scoreFile = "D:\\g1080265\\instagram\\score\\zhfn100w5m5it5sg1.model.bin.json"
+scoreFile = "..\\..\\data\\score\\zhfn100w5m5it5sg1.model.bin.json"
 with open(scoreFile, 'r') as load_f:
     load_dict = json.load(load_f)
     scoreDic = load_dict
 
 # API的金鑰憑證json檔的路徑
-credential_path = 'D:\\paper.json'
+credential_path = 'D:\\APIKey.json'
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credential_path
+
+
+# 需要爬的網紅 的id文字檔
+usersSureFile = "..\\..\\data\\users_sure.txt"
+
+# 使用者推薦新的網紅
+recommendUsersFile = "..\\..\\data\\recommend_users.txt"
+
+# 動物問卷的網紅
+qunAnimalUsers = "..\\..\\data\\questionnaire_animal.txt"
+
+# 車輛問卷的網紅
+qunVehcleUsers = "..\\..\\data\\questionnaire_vehicle.txt"
+
+# 問卷分數
+qunScoreFile = "..\\..\\data\\questionnaire_scores.json"
+
+# Django網頁平台讀取問卷使用者的100張圖片的url
+usersUrlsFile = "..\\..\\data\\usersUrls20200312.json"
+
 
 headers = {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
     'cookie': 'csrftoken=clEUpQamQkCExoxJjDPjWWCZTHYSU7O9; mid=XNz4mAALAAHBH-Comwo8lpvwN-yN; rur=PRN; urlgen="{\"61.218.134.33\": 3462}:1hRG6Y:UVQcciDZf4C8ZYFbrtPSK1eoOO4" fbsr_124024574287414='' '
 }
+
 
 def index(request):
     return render(request, 'index.html', {'date': date,})
@@ -219,8 +243,7 @@ def recommendNewType(request):
 
     newType = request.GET['type']
 
-    typesFile = "recommend_types.txt"
-    types = [ line.rstrip('\n') for line in open(typesFile, 'r') if line.rstrip('\n') != '']
+    types = myTypes + qunTypes
 
     if newType in types:
         responseDic['success'] = False
@@ -254,9 +277,9 @@ def recommendNewUser(request):
 
     responseDic = {}
 
-    usersFile = "recommend_users.txt"
-    userNames = [ line.rstrip('\n') for line in open(usersFile, 'r') if line.rstrip('\n') != '']
-    userNames.extend( [ line.rstrip('\n') for line in open('users_sure.txt', 'r') if line.rstrip('\n') != ''] )
+    
+    userNames = [ line.rstrip('\n') for line in open(recommendUsersFile, 'r') if line.rstrip('\n') != '']
+    userNames.extend( [ line.rstrip('\n') for line in open(usersSureFile, 'r') if line.rstrip('\n') != ''] )
 
     if newAccount in userNames:
         responseDic['success'] = False
@@ -298,14 +321,14 @@ def getUsers(request, postNum):
 
 
 def questionnaire_animal(request):
-    userNames = [ line.rstrip('\n') for line in open('questionnaire_animal.txt', 'r') if line.rstrip('\n') != '']
+    userNames = [ line.rstrip('\n') for line in open(qunAnimalUsers, 'r') if line.rstrip('\n') != '']
     types = ['dog', 'cat']
     qType = 'animal'
     return render(request, 'questionnaire_urls.html', {'types': types, 'users':userNames, 'qType':qType})
 
 
 def questionnaire_vehicle(request):
-    userNames = [ line.rstrip('\n') for line in open('questionnaire_vehicle.txt', 'r') if line.rstrip('\n') != '']
+    userNames = [ line.rstrip('\n') for line in open(qunVehicleUsers, 'r') if line.rstrip('\n') != '']
     types = ['car', 'motorcycle']
     qType = 'vehicle'
     return render(request, 'questionnaire_urls.html', {'types': types, 'users':userNames, 'qType':qType})
@@ -316,7 +339,7 @@ def getUserUrls(request, userName):
     responseDic = {}
     responseDic['success'] = True
     
-    with open("usersUrls20200312.json", 'r') as load_f:
+    with open(usersUrlsFile, 'r') as load_f:
         usersUrls = json.load(load_f)
     
     print(userName)
@@ -331,14 +354,13 @@ def submitScore( request, userName, value1, value2, qType):
 
     responseDic = {}
     
-    questionnaireScoreFile = "questionnaire_scores.json"
-    if not os.path.exists(questionnaireScoreFile):
-        with open(questionnaireScoreFile, "w") as dump_f:
+    if not os.path.exists(qunScoreFile):
+        with open(qunScoreFile, "w") as dump_f:
             qScore = {}
             json.dump(qScore, dump_f, ensure_ascii=False)
 
     else:
-        with open(questionnaireScoreFile, 'r') as load_f:
+        with open(qunScoreFile, 'r') as load_f:
             qScore = json.load(load_f)
     
     if userName not in qScore:
@@ -355,13 +377,18 @@ def submitScore( request, userName, value1, value2, qType):
         qScore[userName]['car'].append(value1)
         qScore[userName]['motorcycle'].append(value2)
 
-    with open(questionnaireScoreFile, "w") as dump_f:
+    with open(qunScoreFile, "w") as dump_f:
         json.dump(qScore, dump_f, ensure_ascii=False)
     
     responseDic['success'] = True
 
     return JsonResponse(responseDic, safe=False)
 
+
+
+
+
+# 以下內容不在論文中，多做的尚未完成，就沒有在操作手冊說明
 
 def currentTypes_admin(request):
     
