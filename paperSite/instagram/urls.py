@@ -36,7 +36,7 @@ urlpatterns = [
     path('getUserUrls/<str:userName>', views.getUserUrls, name='getUserUrls'),
     path('submitScore/<str:userName>/<int:value1>/<int:value2>/<str:qType>', views.submitScore, name='submitScore'),
 
-    # 以下內容不在論文中，多做的，就沒有在操作手冊說明
+    # 以下內容不在論文中，多做的尚未完成，就沒有在操作手冊說明
     path('currentTypes_admin', views.currentTypes_admin, name='currentTypes_admin'),
     path('getAdminData/<str:model>/<str:newType>/<int:postNum>', views.getAdminData, name='getData'),
     path('ex_results_animal', views.ex_results_animal, name='ex_results_animal'),
